@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#b4c6d6" id="tc">
+<title>메신저 밈 메이커</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/*
+VOICE: 장난스럽지만 깔끔한, 실제 사용 중인 메신저처럼
+IDEA: 대화방 화면 그 자체가 도구 — 편집은 아래에서 올라오는 시트
+PICTURE: 화면을 꽉 채운 채팅방 미리보기
+COLOUR and TYPE: 흐린 하늘색 바탕, 노란 내 말풍선, 흰 상대 말풍선 / IBM Plex Sans KR
+LAYOUT: 폰 세로 화면 기준, 넓은 화면에서는 가운데 480px 폰 프레임
+*/
+:root{color-scheme:light;--bg:#b4c6d6;--me:#ffe35a;--you:#fff;--ink:#1c1c1c;--sub:#556270;--sheet:#fff;--line:#e3e7eb;--acc:#2f6fdc}
+*{box-sizing:border-box;min-width:0;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%}
+body{background:#2b3138;color:var(--ink);font:15px/1.45 "IBM Plex Sans KR",system-ui,sans-serif;overflow:hidden}
+#phone{position:relative;max-width:480px;height:100dvh;margin:0 auto;background:var(--bg);display:flex;flex-direction:column;overflow:hidden}
+#sb{display:none;justify-content:space-between;align-items:center;padding:calc(env(safe-area-inset-top) + 6px) 18px 2px;font-size:13px;font-weight:600;background:var(--bg)}
+#sb.on{display:flex}
+#sb.on+header{padding-top:6px}
+#sb .r{display:flex;gap:6px;align-items:center}
+#sb svg{width:16px;height:16px}
+#chatView,#listView{flex:1;display:flex;flex-direction:column;min-height:0}
+#listView{display:none;background:#fff}
+#phone.list #chatView{display:none}
+#phone.list #listView{display:flex}
+#phone.list,#phone.list #sb{background:#fff}
+#back,#menu2{border:0;background:none;color:inherit;padding:8px;margin:-8px 0;display:grid;place-items:center}
+.lh{display:flex;align-items:center;gap:18px;padding:calc(env(safe-area-inset-top) + 14px) 16px 12px 20px}
+#sb.on+#chatView header{padding-top:6px}
+#sb.on~#listView .lh{padding-top:8px}
+.lh h1{flex:1;margin:0;font-size:22px;font-weight:700}
+.lh svg{width:25px;height:25px;flex:none}
+#rooms{flex:1;overflow-y:auto;overflow-x:hidden;padding:4px 0}
+.rm-i{display:flex;gap:14px;align-items:center;padding:11px 16px 11px 20px;cursor:pointer}
+.rm-i .av{width:50px;height:50px;border-radius:19px;font-size:18px}
+.rm-b{flex:1;display:flex;flex-direction:column;gap:3px}
+.rm-t{display:flex;align-items:center;gap:5px;font-size:15.5px;font-weight:600}
+.rm-t .nmx{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rm-t .cnt{color:#9aa3ac;font-weight:500;flex:none}
+.rm-t svg{width:13px;height:13px;flex:none;color:#9aa3ac}
+.rm-p{font-size:13.5px;color:#6b747d;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-all}
+.rm-r{align-self:flex-start;display:flex;flex-direction:column;align-items:flex-end;gap:6px;padding-top:2px;flex:none}
+.rm-r time{font-size:11.5px;color:#9aa3ac;white-space:nowrap}
+.rm-r b{min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:#f2552c;color:#fff;font-size:11.5px;font-weight:600;display:grid;place-items:center}
+.tb{display:flex;justify-content:space-around;align-items:center;padding:10px 0 calc(env(safe-area-inset-bottom) + 12px);border-top:1px solid #eef0f2;color:#9aa3ac}
+.tb svg{width:27px;height:27px}
+.tb svg.on{color:#1c1c1c}
+.redit{border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:10px}
+.redit.main{background:#fff9d9;border-color:#f1dc7a}
+.redit .top{display:flex;gap:10px;align-items:center}
+.redit .top .av{width:42px;height:42px;border-radius:15px;font-size:15px}
+.redit .g3{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,.8fr) minmax(0,.8fr);gap:8px;margin-top:8px}
+.redit .g3 label{margin:0 0 3px;font-size:11.5px}
+.redit .acts{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.redit .acts button{flex:1;min-width:56px;height:38px;border:0;border-radius:9px;background:#eef1f4;font:13px inherit;font-family:inherit;color:var(--ink)}
+.redit .acts .d{background:#fdecea;color:#c0392b}
+.redit .acts .on{background:#1f2933;color:#fff}
+header{display:flex;align-items:center;gap:6px;padding:calc(env(safe-area-inset-top) + 10px) 8px 10px;background:var(--bg)}
+header svg{width:24px;height:24px;flex:none}
+header .t{flex:1;display:flex;align-items:center;gap:9px;font-size:17px;font-weight:600}
+header .t .av{width:34px;height:34px;border-radius:13px;font-size:14px}
+header .t span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+header .t .nmw{display:flex;flex-direction:column;line-height:1.25}
+header .t .n1{display:flex;align-items:center;gap:6px}
+header .t .n1 svg{width:17px;height:17px;flex:none}
+header .t .n2{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:400;color:var(--sub)}
+header .t .n2 svg{width:13px;height:13px;flex:none}
+header .ic{display:flex;gap:14px;padding-right:6px}
+#chat{flex:1;overflow-y:auto;overflow-x:hidden;padding:6px 10px 14px}
+.day{display:flex;justify-content:center;margin:14px 0 10px}
+.day span{background:rgba(0,0,0,.14);color:#fff;font-size:12px;padding:4px 12px;border-radius:20px}
+.sys{text-align:center;margin:10px 0}
+.sys span{display:inline-block;background:rgba(0,0,0,.1);color:#34404c;font-size:12px;padding:4px 12px;border-radius:20px}
+.row{display:flex;gap:8px;margin-top:3px;align-items:flex-start}
+.row.first{margin-top:10px}
+.row.me{justify-content:flex-end}
+.av{width:38px;height:38px;border-radius:14px;flex:none;display:grid;place-items:center;color:#fff;font-weight:600;font-size:15px;background-size:cover;background-position:center}
+.av.blank{visibility:hidden;height:0}
+.col{display:flex;flex-direction:column;max-width:80%}
+.me .col{align-items:flex-end}
+.nm{font-size:12.5px;color:#3a4450;margin:0 0 4px 2px}
+.line{display:flex;align-items:flex-end;gap:5px}
+.me .line{flex-direction:row-reverse}
+.bb{padding:8px 11px;border-radius:15px;background:var(--you);white-space:pre-wrap;word-break:break-word;font-size:15px}
+.me .bb{background:var(--me)}
+.first:not(.me) .bb{border-top-left-radius:5px}
+.first.me .bb{border-top-right-radius:5px}
+.bb.img{padding:0;overflow:hidden;background:none}
+.bb.img img{display:block;max-width:220px;max-height:280px;border-radius:12px}
+.wide{padding-right:6px}
+.wide .col{flex:1;max-width:none}
+.wide .meta{flex:none}
+.wide .line{width:100%}
+.me.wide .line{justify-content:flex-start}
+.card{position:relative;flex:1 1 auto;width:auto;max-width:310px;background:#fff;border-radius:14px;margin-right:12px}
+.card.bdg{margin-top:10px}
+.me .card{margin-right:0;margin-left:12px}
+.card .hd{padding:14px;border-radius:14px 14px 0 0;font-weight:700;font-size:14.5px;line-height:1.3;word-break:break-word}
+.first:not(.me) .card .hd{border-top-left-radius:5px}
+.first.me .card .hd{border-top-right-radius:5px}
+.card .bd{padding:14px;white-space:pre-wrap;word-break:break-word;font-size:14.5px}
+.card .bt{margin:0 12px 12px;padding:10px;text-align:center;background:#f1f3f5;border-radius:8px;font-size:14px}
+.card .bg{position:absolute;top:-10px;right:-10px;width:34px;height:34px;border-radius:50%;background:#3b3b3b;color:#fff;display:grid;place-items:center;padding:0 2px;font-size:9.5px;letter-spacing:-.2px;white-space:nowrap;font-weight:600;line-height:1.1;text-align:center;overflow:hidden}
+.meta{display:flex;flex-direction:column;font-size:10.5px;color:#4b5866;white-space:nowrap;line-height:1.25}
+.me .meta{align-items:flex-end}
+.meta b{color:#e0a100;font-weight:600;font-size:11px}
+
+.msg.sel .bb,.msg.sel .day span,.msg.sel .sys span{outline:2px dashed var(--acc);outline-offset:2px}
+#fbtn{display:none;flex:1;height:56px;border:0;border-radius:28px;color:#fff;font:500 16px inherit;font-family:inherit;align-items:center;justify-content:center;gap:10px;box-shadow:0 6px 18px rgba(0,0,0,.22)}
+#ft #fbtn svg{width:20px;height:20px;color:inherit}
+#chatView{position:relative}
+#ft.menu{position:absolute;left:0;right:0;bottom:0;z-index:2;background:transparent;padding:10px 12px calc(env(safe-area-inset-bottom) + 14px);pointer-events:none}
+.fl #chat{padding-bottom:calc(env(safe-area-inset-bottom) + 90px)}
+#ft.menu>*{display:none}
+#ft.menu #fbtn{display:flex}
+footer{display:flex;align-items:center;gap:8px;padding:8px 10px calc(env(safe-area-inset-bottom) + 8px);background:#fff}
+footer .in{flex:1;height:36px;border-radius:18px;background:#f1f3f5;padding:0 14px;display:flex;align-items:center;color:#9aa4ae;font-size:14px}
+footer svg{width:24px;height:24px;flex:none;color:#7d8791}
+header .ic{align-items:center}
+#menu{border:0;background:none;color:inherit;padding:10px;margin:-10px -6px -10px -10px;display:grid;place-items:center}
+#toast{position:absolute;left:50%;top:70px;transform:translateX(-50%);background:rgba(20,24,28,.85);color:#fff;font-size:13px;padding:8px 14px;border-radius:18px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:9;white-space:nowrap}
+#toast.on{opacity:1}
+#sheet{position:absolute;inset:auto 0 0 0;z-index:8;background:var(--sheet);border-radius:18px 18px 0 0;box-shadow:0 -8px 30px rgba(0,0,0,.25);max-height:72dvh;display:flex;flex-direction:column;transform:translateY(105%);transition:transform .28s ease}
+#sheet.on{transform:none}
+@media(prefers-reduced-motion:reduce){#sheet,#toast{transition:none}}
+.tabs{display:flex;border-bottom:1px solid var(--line);padding:0 8px}
+.tabs button{flex:1;height:46px;border:0;background:none;font:500 14px inherit;font-family:inherit;color:#7b8590;border-bottom:2px solid transparent}
+.tabs button.on{color:var(--ink);border-color:var(--ink)}
+.pane{overflow-y:auto;padding:14px 16px calc(env(safe-area-inset-bottom) + 16px);display:none}
+.pane.on{display:block}
+label{display:block;font-size:13px;color:#5b6570;margin:10px 0 4px}
+input,select,textarea{width:100%;font:16px inherit;font-family:inherit;padding:9px 11px;border:1px solid #cfd6dd;border-radius:10px;background:#fff;color:var(--ink)}
+textarea{min-height:70px;resize:vertical}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{flex:1;min-width:70px;height:40px;border:1px solid #cfd6dd;border-radius:10px;background:#fff;font:14px inherit;font-family:inherit;color:var(--ink)}
+.seg button.on{background:#1f2933;color:#fff;border-color:#1f2933}
+.btns{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.b{flex:1;min-width:90px;height:44px;border:0;border-radius:12px;background:#eef1f4;font:600 14px inherit;font-family:inherit;color:var(--ink)}
+.b.pri{background:#1f2933;color:#fff}
+.b.del{background:#fdecea;color:#c0392b}
+.person{display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.person .pic{margin:0;padding:0;border:0;background:none;cursor:pointer;flex:none;border-radius:16px}
+.person .av{width:48px;height:48px}
+.pinfo{flex:1;display:flex;flex-direction:column;gap:4px}
+.pbt{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.person .rm{border:0;background:none;padding:6px 0;font:12.5px inherit;font-family:inherit;color:#7b8590}
+.person .tag{font-size:11.5px;background:var(--me);padding:1px 8px;border-radius:10px}
+.person .x{width:44px;height:44px;border:0;background:none;color:#c0392b;font-size:20px}
+.person .up{margin:0;padding:6px 0;border:0;background:none;font-family:inherit;font-size:12.5px;color:var(--acc);white-space:nowrap;cursor:pointer}
+
+.hint{font-size:12.5px;color:#7b8590;margin:12px 0 0}
+#editing{font-size:13px;color:var(--acc);margin:0 0 4px;display:none}
+.hide{display:none!important}
+#list{display:flex;flex-direction:column;gap:6px}
+#list button{display:flex;gap:8px;align-items:baseline;text-align:left;min-height:44px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:#fff;font:14px inherit;font-family:inherit;color:var(--ink)}
+#list button.on{border-color:var(--acc);background:#eef4ff}
+#list .who{flex:none;font-weight:600;font-size:12.5px;color:#5b6570;max-width:6em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#list .tx{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#list .empty{font-size:13px;color:#7b8590}
+</style>
+</head>
+<body>
+<div id="phone">
+  <div id="sb"><span id="sbTime"></span><span class="r">
+    <svg viewBox="0 0 16 16"><path d="M1 13h2v-2H1zM5 13h2V8H5zM9 13h2V5H9zM13 13h2V2h-2z" fill="currentColor"/></svg>
+    <span id="sbBat"></span>
+    <svg viewBox="0 0 26 16" style="width:24px"><rect x="1" y="3" width="21" height="10" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.4"/><rect id="sbFill" x="3" y="5" width="17" height="6" rx="1" fill="currentColor"/><rect x="23" y="6" width="2" height="4" rx="1" fill="currentColor"/></svg>
+  </span></div>
+  <div id="chatView">
+  <header>
+    <button type="button" id="back" aria-label="채팅 목록으로"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:26px;height:26px"><path d="M20.5 12H3.5M10 5.5L3.5 12 10 18.5"/></svg></button>
+    <div class="t" id="title"></div>
+    <div class="ic">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></svg>
+      <button type="button" id="menu" aria-label="편집"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    </div>
+  </header>
+  <div id="chat"></div>
+  <footer id="ft">
+    <button type="button" id="fbtn" tabindex="-1"><span id="fbtnT"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg></button>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    <div class="in">메시지 입력</div>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8.5"/><path d="M9 10h.01M15 10h.01" stroke-linecap="round" stroke-width="3"/><path d="M8.5 14.5c2 2 5 2 7 0" stroke-linecap="round"/></svg>
+  </footer>
+  </div>
+
+  <div id="listView">
+    <div class="lh">
+      <h1>채팅</h1>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.5c-4.7 0-8 2.9-8 6.6 0 2.2 1.2 4.1 3.1 5.3L6.5 20l3.9-2.2c.5.1 1 .1 1.6.1 4.7 0 8-2.9 8-6.7S16.7 4.5 12 4.5z"/><path d="M12 8.5v5M9.5 11h5"/></svg>
+      <button type="button" id="menu2" aria-label="편집"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    </div>
+    <div id="rooms"></div>
+    <nav class="tb">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20c.8-3.9 3.8-6 7.5-6s6.7 2.1 7.5 6"/></svg>
+      <svg class="on" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4c-4.9 0-8.5 3-8.5 6.9 0 2.3 1.3 4.3 3.3 5.6L6.2 20.5l4.3-2.4c.5.1 1 .1 1.5.1 4.9 0 8.5-3 8.5-6.9S16.9 4 12 4z"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M14.8 9.2l-1.7 4-4 1.6 1.7-4z"/></svg>
+      <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5.5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="18.5" cy="12" r="1.7"/></svg>
+    </nav>
+  </div>
+
+  <div id="toast"></div>
+  <input type="file" id="avPick" accept="image/*" style="position:fixed;left:-9999px;width:1px;height:1px;opacity:0">
+
+  <div id="sheet" role="dialog" aria-label="편집">
+    <div class="tabs">
+      <button type="button" data-p="pMsg" class="on">메시지</button>
+      <button type="button" data-p="pPeople">인물</button>
+      <button type="button" data-p="pRoom">방 설정</button>
+      <button type="button" data-p="pList">목록</button>
+      <button type="button" id="close" aria-label="닫기">닫기</button>
+    </div>
+
+    <div class="pane on" id="pMsg">
+      <p id="editing">선택한 메시지를 수정 중이에요</p>
+      <div class="seg" id="kind">
+        <button type="button" data-k="msg" class="on">말풍선</button>
+        <button type="button" data-k="day">날짜 구분</button>
+        <button type="button" data-k="sys">안내 문구</button>
+        <button type="button" data-k="card">안내 카드</button>
+      </div>
+      <div id="fCard">
+        <label for="cTitle">카드 제목</label><input id="cTitle" type="text" value="괴물 출현 경보">
+        <div class="grid2">
+          <div><label for="cBadge">배지 글자 (최대 5자, 비우면 숨김)</label><input id="cBadge" type="text" value="경보" maxlength="5"></div>
+          <div><label for="cColor">머리 색</label><input id="cColor" type="color" value="#ffd84a" style="height:42px;padding:4px"></div>
+        </div>
+        <label for="cBtn">하단 버튼 (비우면 숨김)</label><input id="cBtn" type="text" value="대피 요령 보기">
+      </div>
+      <div id="fSender"><label for="sender">보낸 사람</label><select id="sender"></select></div>
+      <label for="text" id="textLbl">내용</label>
+      <textarea id="text" placeholder="대화 내용을 입력하세요"></textarea>
+      <div id="fImg"><label for="img">또는 사진 메시지</label><input type="file" id="img" accept="image/*"></div>
+      <div class="grid2" id="fMeta">
+        <div><label for="time">시간</label><input id="time" type="text" value="오후 1:04"></div>
+        <div><label for="unread">안 읽은 수 (0이면 숨김)</label><input id="unread" type="number" min="0" value="1" inputmode="numeric"></div>
+      </div>
+      <div class="btns">
+        <button type="button" class="b pri" id="add">추가</button>
+        <button type="button" class="b hide" id="up">위로</button>
+        <button type="button" class="b hide" id="down">아래로</button>
+        <button type="button" class="b del hide" id="del">삭제</button>
+        <button type="button" class="b hide" id="cancel">선택 해제</button>
+      </div>
+      <p class="hint">같은 사람이 같은 시간에 연달아 보내면 이름과 시간이 자동으로 묶여요.</p>
+      <label>메시지 목록 (눌러서 수정)</label>
+      <div id="list"></div>
+    </div>
+
+    <div class="pane" id="pPeople">
+      <div id="people"></div>
+      <p class="hint">위쪽이 '나'(오른쪽 노란 말풍선), 아래쪽이 대화 상대예요. 상대의 이름과 사진이 맨 위에 표시돼요.</p>
+    </div>
+
+    <div class="pane" id="pList">
+      <p class="hint" style="margin-top:0">왼쪽 위 화살표를 누르면 나오는 채팅 목록이에요. 노란 칸이 지금 만들고 있는 대화방이고, 이름·사진·마지막 메시지는 대화에서 자동으로 가져와요. 목록에서 그 방을 누르면 대화로 돌아가요.</p>
+      <div id="roomEd"></div>
+      <div class="btns"><button type="button" class="b" id="addRoom">채팅방 추가</button></div>
+    </div>
+
+    <div class="pane" id="pRoom">
+      <label for="mk">이름 옆 인증 마크</label>
+      <select id="mk"><option value="0">숨김</option><option value="1">표시</option></select>
+      <label for="sub">이름 아래 작은 글씨 (전화번호 등, 비우면 숨김)</label>
+      <input id="sub" type="text" autocomplete="off" placeholder="숫자만 써도 하이픈이 자동으로 들어가요">
+      <label for="fm">하단 입력 바</label>
+      <select id="fm"><option value="0">메시지 입력창</option><option value="1">메뉴 버튼 (공지만 받는 방)</option></select>
+      <div id="fmOpt" class="grid2">
+        <div><label for="fmT">버튼 글자</label><input id="fmT" type="text" autocomplete="off"></div>
+        <div><label for="fmC">버튼 색</label><input id="fmC" type="color" style="height:42px;padding:4px"></div>
+      </div>
+      <label for="sbOn">맨 위 상태바 (전체 화면에서는 폰 상태바가 사라져서 대신 그려요)</label>
+      <select id="sbOn"><option value="1">표시</option><option value="0">숨김</option></select>
+      <div class="grid2">
+        <div><label for="sbT">상태바 시각</label><input id="sbT" type="text"></div>
+        <div><label for="sbB">배터리 %</label><input id="sbB" type="number" min="1" max="100" inputmode="numeric"></div>
+      </div>
+      <div class="btns">
+        <button type="button" class="b pri" id="capBtn">전체 화면 캡처 모드</button>
+        <button type="button" class="b" id="guide">사용법 다시 보기</button>
+        <button type="button" class="b del" id="reset">모두 지우기</button>
+      </div>
+      <p class="hint">캡처 모드를 켜면 주소창이 사라져요. 편집창은 오른쪽 위 줄 세 개 아이콘으로 언제든 열 수 있고, 화면을 길게 누르면 전체 화면이 풀려요.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+{
+const $=s=>document.querySelector(s);
+const COLORS=['#7ea6d8','#e99a8b','#8cc7a1','#c9a0dc','#f0b85a','#7fb8c4'];
+const dark=c=>{const m=/^#([0-9a-f]{6})$/i.exec(c||'');if(!m)return false;const n=parseInt(m[1],16);return((n>>16)*299+((n>>8&255)*587)+(n&255)*114)/1000<140};
+const phone=v=>{
+  if(!/^\d+$/.test(v))return v;
+  const d=v;
+  if(d.length===11)return d.replace(/(\d{3})(\d{4})(\d{4})/,'$1-$2-$3');
+  if(d.length===10)return d.startsWith('02')?d.replace(/(\d{2})(\d{4})(\d{4})/,'$1-$2-$3'):d.replace(/(\d{3})(\d{3})(\d{4})/,'$1-$2-$3');
+  if(d.length===9&&d.startsWith('02'))return d.replace(/(\d{2})(\d{3})(\d{4})/,'$1-$2-$3');
+  if(d.length===8)return d.replace(/(\d{4})(\d{4})/,'$1-$2');
+  return v;
+};
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let uid=1;
+const nid=()=>'i'+Date.now().toString(36)+(uid++);
+
+const sample=()=>({
+  people:[{id:'me',name:'나',color:COLORS[0],img:''},{id:'p1',name:'사용법 안내',color:COLORS[2],img:''}],
+  msgs:[
+    {id:nid(),k:'day',text:'사용법 안내'},
+    {id:nid(),k:'msg',s:'p1',text:'안녕하세요! 메신저 밈 메이커 사용법을 알려드릴게요.',time:'오후 1:00',unread:0},
+    {id:nid(),k:'msg',s:'p1',text:'오른쪽 위 줄 세 개 아이콘을 누르면 편집창이 열려요.',time:'오후 1:00',unread:0},
+    {id:nid(),k:'msg',s:'p1',text:'[메시지] 탭\n보낸 사람, 내용, 시간, 안 읽은 수를 넣고 추가를 누르면 말풍선이 생겨요. 아래 메시지 목록에서 눌러서 고치거나 순서를 바꾸고 지울 수 있어요.',time:'오후 1:01',unread:0},
+    {id:nid(),k:'msg',s:'me',text:'"나"로 보내면 이렇게 오른쪽 노란 말풍선이 돼요',time:'오후 1:01',unread:1},
+    {id:nid(),k:'sys',text:'날짜 구분, 안내 문구도 메시지 탭에서 넣을 수 있어요'},
+    {id:nid(),k:'card',s:'p1',title:'안내 카드 예시',badge:'TIP',color:'#ffd84a',text:'메시지 탭에서 "안내 카드"를 고르면 제목·배지·머리 색·하단 버튼이 있는 카드를 만들 수 있어요.',btn:'자세히 보기',time:'오후 1:02',unread:0,img:''},
+    {id:nid(),k:'msg',s:'p1',text:'[인물] 탭\n나와 상대의 이름, 프로필 사진을 바꿔요. 상대 이름과 사진은 맨 위에도 표시돼요.',time:'오후 1:03',unread:0},
+    {id:nid(),k:'msg',s:'p1',text:'[방 설정] 탭\n이름 옆 인증 마크, 이름 아래 전화번호, 하단 메뉴 버튼, 상태바를 설정해요.',time:'오후 1:03',unread:0},
+    {id:nid(),k:'msg',s:'p1',text:'[목록] 탭\n왼쪽 위 화살표를 누르면 나오는 채팅 목록을 꾸며요.',time:'오후 1:03',unread:0},
+    {id:nid(),k:'msg',s:'p1',text:'캡처할 때는 방 설정의 "전체 화면 캡처 모드"를 누르세요. 화면을 길게 누르면 전체 화면이 풀려요.',time:'오후 1:04',unread:0},
+    {id:nid(),k:'msg',s:'p1',text:'다 읽었으면 방 설정의 "모두 지우기"로 비우고 시작하세요!',time:'오후 1:04',unread:0}
+  ]
+});
+
+let st;
+try{st=JSON.parse(localStorage.getItem('memechat'))}catch(e){}
+if(!st||!st.people||!st.msgs||st.people.length<2)st=sample();
+if(st.people.length>2){const keep=st.people.slice(0,2).map(p=>p.id);st.msgs.forEach(m=>{if(m.s&&!keep.includes(m.s))m.s=keep[1]});st.people=st.people.slice(0,2)}
+if(!st.rooms)st.rooms=[{id:'main'},
+  {id:'r1',name:'동아리 공지방',preview:'다음 주 회의 시간 투표해 주세요',time:'오전 11:20',unread:3,memb:'24',pin:1,img:'',color:COLORS[2]},
+  {id:'r2',name:'엄마',preview:'저녁 먹고 와?',time:'어제',unread:0,memb:'',pin:0,img:'',color:COLORS[4]},
+  {id:'r3',name:'조별과제 3조',preview:'자료 정리한 거 올렸어요',time:'11월 20일',unread:0,memb:'4',pin:0,img:'',color:COLORS[5]}];
+const save=()=>{try{localStorage.setItem('memechat',JSON.stringify(st))}catch(e){}};
+
+let sel=null,kind='msg',pendingImg='';
+const person=id=>st.people.find(p=>p.id===id)||{name:'(삭제됨)',color:'#999',img:''};
+const avHtml=p=>p.img?`<div class="av" style="background-image:url('${p.img}')"></div>`:`<div class="av" style="background:${p.color}">${esc((p.name||'?').slice(0,1))}</div>`;
+
+function render(){
+  const other=st.people[1]||{name:'',color:'#999',img:''};
+  const mark=st.mk==1?'<svg viewBox="0 0 20 20" aria-label="인증"><circle cx="10" cy="10" r="9" fill="#1c1c1c"/><path d="M6 10.3l2.7 2.6L14.2 7.4" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/></svg>':'';
+  const sub=st.sub?`<span class="n2"><span>${esc(phone(st.sub))}</span><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 4.5l3 3 3-3"/></svg></span>`:'';
+  $('#title').innerHTML=avHtml(other)+`<span class="nmw"><span class="n1"><span>${esc(other.name)}</span>${mark}</span>${sub}</span>`;
+  const ms=st.msgs,me=st.people[0]&&st.people[0].id;
+  $('#chat').innerHTML=ms.map((m,i)=>{
+    const sc='';
+    if(m.k==='day')return `<div class="msg day${sc}" data-id="${m.id}"><span>${esc(m.text)}</span></div>`;
+    if(m.k==='sys')return `<div class="msg sys${sc}" data-id="${m.id}"><span>${esc(m.text)}</span></div>`;
+    const prev=ms[i-1],next=ms[i+1];
+    const same=(a,b)=>a&&b&&a.k!=='day'&&a.k!=='sys'&&b.k!=='day'&&b.k!=='sys'&&a.s===b.s&&a.time===b.time;
+    const first=!same(prev,m),last=!same(m,next);
+    const isMe=m.s===me,p=person(m.s);
+    const body=m.k==='card'?`<div class="card${m.badge?' bdg':''}"><div class="hd" style="background:${esc(m.color||'#ffd84a')};color:${dark(m.color)?'#fff':'#141414'}">${esc(m.title||'')}</div>${m.badge?`<div class="bg">${esc(m.badge)}</div>`:''}${m.text?`<div class="bd">${esc(m.text)}</div>`:''}${m.btn?`<div class="bt">${esc(m.btn)}</div>`:''}</div>`:m.img?`<div class="bb img"><img src="${m.img}" alt=""></div>`:`<div class="bb">${esc(m.text)}</div>`;
+    const meta=`<div class="meta">${m.unread>0?`<b>${m.unread}</b>`:''}${last&&m.time?`<span>${esc(m.time)}</span>`:''}</div>`;
+    return `<div class="msg row${m.k==='card'?' wide':''}${isMe?' me':''}${first?' first':''}${sc}" data-id="${m.id}">${isMe?'':(first?avHtml(p):'<div class="av blank"></div>')}<div class="col">${!isMe&&first?`<div class="nm">${esc(p.name)}</div>`:''}<div class="line">${body}${meta}</div></div></div>`;
+  }).join('');
+  $('#list').innerHTML=ms.length?ms.map(m=>{
+    const who=m.k==='day'?'날짜':m.k==='sys'?'안내':person(m.s).name;
+    const tx=m.k==='card'?'[카드] '+(m.title||m.text):m.img&&!m.text?'(사진)':m.text;
+    return `<button type="button" data-id="${m.id}" class="${m.id===sel?'on':''}"><span class="who">${esc(who)}</span><span class="tx">${esc(tx)}</span></button>`;
+  }).join(''):'<p class="empty">아직 메시지가 없어요</p>';
+  if(st.sbOn==null){st.sbOn=1;st.sbT='1:04';st.sbB=78}
+  $('#sbTime').textContent=st.sbT;$('#sbBat').textContent=st.sbB+'%';
+  $('#sbFill').setAttribute('width',Math.max(1,Math.round(17*st.sbB/100)));
+  const sv=$('#sender').value||(sel&&st.msgs.find(x=>x.id===sel)?.s);
+  $('#sender').innerHTML=st.people.map((p,i)=>`<option value="${p.id}">${esc(p.name)}${i===0?' (나)':''}</option>`).join('');
+  if(sv&&st.people.some(p=>p.id===sv))$('#sender').value=sv;
+  if(st.fmT==null){st.fm=0;st.fmT='채널 메뉴';st.fmC='#d90000'}
+  const fc=dark(st.fmC)?'#fff':'#141414';
+  $('#ft').classList.toggle('menu',st.fm==1);$('#chatView').classList.toggle('fl',st.fm==1);
+  $('#fbtnT').textContent=st.fmT;$('#fbtn').style.background=st.fmC;$('#fbtn').style.color=fc;
+  renderList();save();
+}
+const pin='<svg viewBox="0 0 16 16" fill="currentColor"><path d="M10.2 1.5l4.3 4.3-1.4.4-2.6 2.6.3 3.1-1 1-2.6-2.6-3.6 3.6-.7-.7 3.6-3.6L3.9 7l1-1 3.1.3 2.6-2.6z"/></svg>';
+function mainInfo(){
+  const o=st.people[1]||{name:'',color:'#999',img:''};
+  const last=[...st.msgs].reverse().find(m=>m.k==='msg'||m.k==='card');
+  const pv=!last?'':last.k==='card'?(last.title||last.text):last.img&&!last.text?'사진을 보냈습니다.':last.text;
+  return {name:o.name,img:o.img,color:o.color,preview:pv,time:last?last.time:''};
+}
+function renderList(){
+  if(!st.rooms)st.rooms=[{id:'main'}];
+  $('#rooms').innerHTML=st.rooms.map(r=>{
+    const d=r.id==='main'?Object.assign({},r,mainInfo()):r;
+    return `<div class="rm-i" data-rid="${r.id}">${avHtml(d)}<div class="rm-b"><div class="rm-t"><span class="nmx">${esc(d.name||'')}</span>${d.memb?`<span class="cnt">${esc(d.memb)}</span>`:''}${d.pin?pin:''}</div><div class="rm-p">${esc(d.preview||'')}</div></div><div class="rm-r"><time>${esc(d.time||'')}</time>${d.unread>0?`<b>${d.unread>999?'999+':d.unread}</b>`:''}</div></div>`;
+  }).join('');
+}
+function renderRoomEd(){
+  $('#roomEd').innerHTML=st.rooms.map((r,i)=>{
+    const m=r.id==='main',d=m?Object.assign({},r,mainInfo()):r;
+    return `<div class="redit${m?' main':''}" data-rid="${r.id}"><div class="top">${m?avHtml(d):`<button type="button" class="pic" data-ract="pick" style="border:0;background:none;padding:0">${avHtml(d)}</button>`}${m?`<b style="flex:1">${esc(d.name)} (지금 대화방)</b>`:`<input type="text" data-f="name" value="${esc(r.name||'')}" aria-label="방 이름" autocomplete="off">`}</div>
+      ${m?'':`<label style="margin:8px 0 3px;font-size:11.5px">마지막 메시지</label><input type="text" data-f="preview" value="${esc(r.preview||'')}" autocomplete="off">`}
+      <div class="g3">${m?'<div></div>':`<div><label>시간</label><input type="text" data-f="time" value="${esc(r.time||'')}"></div>`}<div><label>안 읽음</label><input type="number" min="0" inputmode="numeric" data-f="unread" value="${r.unread||0}"></div><div><label>인원</label><input type="text" inputmode="numeric" data-f="memb" value="${esc(r.memb||'')}"></div></div>
+      <div class="acts"><button type="button" data-ract="pin" class="${r.pin?'on':''}">고정</button><button type="button" data-ract="up"${i===0?' disabled':''}>위</button><button type="button" data-ract="down"${i===st.rooms.length-1?' disabled':''}>아래</button>${m?'':'<button type="button" class="d" data-ract="del">삭제</button>'}</div></div>`;
+  }).join('');
+}
+const fs=()=>document.fullscreenElement||document.webkitFullscreenElement;
+const syncSb=()=>$('#sb').classList.toggle('on',!!fs()&&st.sbOn==1);
+
+function renderPeople(){
+  $('#people').innerHTML=st.people.map((p,i)=>`<div class="person" data-pid="${p.id}"><button type="button" class="pic" data-act="pick" aria-label="프로필 사진 바꾸기">${avHtml(p)}</button><div class="pinfo"><input type="text" value="${esc(p.name)}" aria-label="이름" autocomplete="off"><div class="pbt"><button type="button" class="up" data-act="pick">사진 바꾸기</button>${p.img?'<button type="button" class="rm">기본 사진으로</button>':''}<span class="tag">${i===0?'나':'상대'}</span></div></div>${i===0||st.people.length<=2?'':'<button type="button" class="x" aria-label="삭제">×</button>'}</div>`).join('');
+  $('#fm').value=String(st.fm||0);$('#fmT').value=st.fmT;$('#fmC').value=st.fmC;$('#fmOpt').classList.toggle('hide',st.fm!=1);
+  $('#mk').value=String(st.mk||0);$('#sub').value=st.sub||'';
+  $('#sbOn').value=String(st.sbOn);$('#sbT').value=st.sbT;$('#sbB').value=st.sbB;
+}
+
+function setKind(k){
+  kind=k;
+  document.querySelectorAll('#kind button').forEach(b=>b.classList.toggle('on',b.dataset.k===k));
+  const isMsg=k==='msg',bub=k==='msg'||k==='card';
+  $('#fSender').classList.toggle('hide',!bub);$('#fImg').classList.toggle('hide',!isMsg);$('#fMeta').classList.toggle('hide',!bub);
+  $('#fCard').classList.toggle('hide',k!=='card');
+  $('#textLbl').textContent=k==='day'?'날짜 문구':k==='sys'?'안내 문구 (예: 민지님이 들어왔습니다.)':k==='card'?'카드 본문':'내용';
+}
+
+function selectMsg(id){
+  sel=id;const m=st.msgs.find(x=>x.id===id);
+  const on=!!m;
+  ['#up','#down','#del','#cancel'].forEach(s=>$(s).classList.toggle('hide',!on));
+  $('#editing').style.display=on?'block':'none';
+  $('#add').textContent=on?'수정 저장':'추가';
+  if(m){setKind(m.k);$('#text').value=m.text||'';if(m.s)$('#sender').value=m.s;$('#time').value=m.time||'';$('#unread').value=m.unread||0;
+    if(m.k==='card'){$('#cTitle').value=m.title||'';$('#cBadge').value=m.badge||'';$('#cColor').value=m.color||'#ffd84a';$('#cBtn').value=m.btn||''}}
+  pendingImg='';$('#img').value='';
+  render();
+}
+
+function openSheet(){$('#sheet').classList.add('on')}
+const toast=t=>{const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.h);toast.h=setTimeout(()=>e.classList.remove('on'),2200)};
+
+$('#menu').onclick=openSheet;
+$('#menu2').onclick=()=>{openSheet();document.querySelector('.tabs button[data-p=pList]').click()};
+const setTc=c=>{const m=document.getElementById('tc');if(m)m.setAttribute('content',c)};
+$('#back').onclick=()=>{$('#sheet').classList.remove('on');if(sel)selectMsg(null);$('#phone').classList.add('list');setTc('#ffffff');$('#rooms').scrollTop=0};
+$('#rooms').addEventListener('click',e=>{const it=e.target.closest('.rm-i');if(it&&it.dataset.rid==='main'){$('#phone').classList.remove('list');setTc('#b4c6d6');const c=$('#chat');c.scrollTop=c.scrollHeight}});
+$('#roomEd').addEventListener('input',e=>{
+  const box=e.target.closest('.redit'),f=e.target.dataset.f;if(!box||!f)return;
+  const r=st.rooms.find(x=>x.id===box.dataset.rid);if(!r)return;
+  r[f]=f==='unread'?Math.max(0,parseInt(e.target.value)||0):e.target.value;
+  if(f==='name'&&!r.img){const av=box.querySelector('.av');if(av)av.textContent=(r.name||'?').slice(0,1)}
+  renderList();save();
+});
+$('#roomEd').addEventListener('click',e=>{
+  const b=e.target.closest('[data-ract]');if(!b)return;
+  const box=b.closest('.redit'),i=st.rooms.findIndex(x=>x.id===box.dataset.rid),r=st.rooms[i],a=b.dataset.ract;
+  if(a==='pick'){pickFor='room:'+r.id;try{$('#avPick').click()}catch(err){toast('사진 선택을 열 수 없어요')}return}
+  if(a==='pin')r.pin=r.pin?0:1;
+  if(a==='del')st.rooms.splice(i,1);
+  if(a==='up'&&i>0)[st.rooms[i-1],st.rooms[i]]=[st.rooms[i],st.rooms[i-1]];
+  if(a==='down'&&i<st.rooms.length-1)[st.rooms[i+1],st.rooms[i]]=[st.rooms[i],st.rooms[i+1]];
+  renderList();renderRoomEd();save();
+});
+$('#addRoom').onclick=()=>{const n=st.rooms.length;st.rooms.push({id:nid(),name:'새 채팅방',preview:'',time:'오후 1:00',unread:0,memb:'',pin:0,img:'',color:COLORS[n%COLORS.length]});renderList();renderRoomEd();save()};
+$('#close').onclick=()=>{$('#sheet').classList.remove('on');if(sel)selectMsg(null)};
+document.querySelectorAll('.tabs button[data-p]').forEach(b=>b.onclick=()=>{
+  if(b.dataset.p==='pList')renderRoomEd();
+  document.querySelectorAll('.tabs button[data-p]').forEach(x=>x.classList.toggle('on',x===b));
+  document.querySelectorAll('.pane').forEach(p=>p.classList.toggle('on',p.id===b.dataset.p));
+});
+document.querySelectorAll('#kind button').forEach(b=>b.onclick=()=>setKind(b.dataset.k));
+
+$('#list').addEventListener('click',e=>{
+  const b=e.target.closest('button[data-id]');if(!b)return;
+  selectMsg(b.dataset.id===sel?null:b.dataset.id);
+  if(sel)$('#pMsg').scrollTop=0;
+});
+
+$('#img').onchange=e=>{
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();r.onload=()=>{pendingImg=r.result;toast('사진을 골랐어요. 추가를 누르세요')};r.readAsDataURL(f);
+};
+
+$('#add').onclick=()=>{
+  const text=$('#text').value;
+  if(kind!=='card'&&!text.trim()&&!pendingImg&&!(sel&&st.msgs.find(x=>x.id===sel)?.img)){toast('내용을 입력하세요');return}
+  if(kind==='card'&&!$('#cTitle').value.trim()&&!text.trim()){toast('제목이나 본문을 입력하세요');return}
+  const data={k:kind,text};
+  if(kind==='card')Object.assign(data,{title:$('#cTitle').value,badge:$('#cBadge').value.trim().slice(0,5),color:$('#cColor').value,btn:$('#cBtn').value.trim()});
+  if(kind==='msg'||kind==='card'){data.s=$('#sender').value;data.time=$('#time').value;data.unread=Math.max(0,parseInt($('#unread').value)||0)}
+  if(sel){
+    const m=st.msgs.find(x=>x.id===sel);
+    const img=pendingImg||(text.trim()?'':m.img||'');
+    Object.assign(m,data,{img:kind==='msg'?img:''});
+    selectMsg(null);toast('수정했어요');
+  }else{
+    st.msgs.push(Object.assign({id:nid(),img:kind==='msg'?pendingImg:''},data));
+    $('#text').value='';pendingImg='';$('#img').value='';
+    render();const c=$('#chat');c.scrollTop=c.scrollHeight;
+  }
+};
+const move=d=>{const i=st.msgs.findIndex(x=>x.id===sel),j=i+d;if(i<0||j<0||j>=st.msgs.length)return;[st.msgs[i],st.msgs[j]]=[st.msgs[j],st.msgs[i]];render()};
+$('#up').onclick=()=>move(-1);$('#down').onclick=()=>move(1);
+$('#del').onclick=()=>{st.msgs=st.msgs.filter(x=>x.id!==sel);selectMsg(null)};
+$('#cancel').onclick=()=>selectMsg(null);
+
+$('#people').addEventListener('input',e=>{
+  const row=e.target.closest('.person');if(!row||e.target.type!=='text')return;
+  const p=person(row.dataset.pid);p.name=e.target.value;
+  if(!p.img){const av=row.querySelector('.av');if(av)av.textContent=(p.name||'?').slice(0,1)}
+  const ms=$('#chat').scrollTop;render();$('#chat').scrollTop=ms;
+});
+let pickFor=null;
+$('#avPick').addEventListener('change',e=>{
+  const f=e.target.files&&e.target.files[0],pid=pickFor;e.target.value='';
+  if(!f||!pid)return;
+  toast('사진 불러오는 중…');
+  if(pid.startsWith('room:')){const r=st.rooms.find(x=>x.id===pid.slice(5));shrink(f,url=>{if(r)r.img=url;render();renderRoomEd();toast('사진을 바꿨어요')});return}
+  shrink(f,url=>{person(pid).img=url;render();renderPeople();renderRoomEd();toast('프로필 사진을 바꿨어요')});
+});
+function shrink(f,cb){
+  const r=new FileReader();
+  r.onerror=()=>toast('사진 파일을 읽지 못했어요');
+  r.onload=()=>{
+    const raw=r.result,im=new Image();
+    im.onload=()=>{
+      try{
+        const n=240,c=document.createElement('canvas');c.width=c.height=n;
+        const k=Math.min(im.naturalWidth,im.naturalHeight);
+        c.getContext('2d').drawImage(im,(im.naturalWidth-k)/2,(im.naturalHeight-k)/2,k,k,0,0,n,n);
+        cb(c.toDataURL('image/jpeg',.85));
+      }catch(err){cb(raw)}
+    };
+    im.onerror=()=>toast('이 사진 형식은 열 수 없어요. JPG나 PNG로 해 주세요');
+    im.src=raw;
+  };
+  r.readAsDataURL(f);
+}
+$('#people').addEventListener('click',e=>{
+  const row=e.target.closest('.person');if(!row)return;
+  if(e.target.closest('[data-act=pick]')){
+    pickFor=row.dataset.pid;
+    try{$('#avPick').click()}catch(err){toast('사진 선택을 열 수 없어요')}
+    return;
+  }
+  if(e.target.classList.contains('rm')){person(row.dataset.pid).img='';render();renderPeople();return}
+  if(!e.target.classList.contains('x'))return;
+  st.people=st.people.filter(p=>p.id!==row.dataset.pid);render();renderPeople();
+});
+$('#guide').onclick=()=>{const g=sample();st.msgs=g.msgs;if(!st.people[1]||st.people[1].name==='민지')st.people=g.people;selectMsg(null);renderPeople();renderRoomEd();$('#sheet').classList.remove('on');$('#chat').scrollTop=0;toast('사용법 대화를 불러왔어요')};
+$('#reset').onclick=()=>{
+  if($('#reset').dataset.c){st=sample();st.msgs=[];delete $('#reset').dataset.c;$('#reset').textContent='모두 지우기';selectMsg(null);renderPeople();toast('대화를 비웠어요');return}
+  $('#reset').dataset.c='1';$('#reset').textContent='한 번 더 누르면 삭제';
+  setTimeout(()=>{delete $('#reset').dataset.c;$('#reset').textContent='모두 지우기'},3000);
+};
+
+$('#fm').onchange=e=>{st.fm=+e.target.value;$('#fmOpt').classList.toggle('hide',st.fm!=1);render()};
+$('#fmT').oninput=e=>{st.fmT=e.target.value;render()};
+$('#fmC').oninput=e=>{st.fmC=e.target.value;render()};
+$('#mk').onchange=e=>{st.mk=+e.target.value;render()};
+$('#sub').oninput=e=>{st.sub=e.target.value;render()};
+$('#sbOn').onchange=e=>{st.sbOn=+e.target.value;render();syncSb()};
+$('#sbT').oninput=e=>{st.sbT=e.target.value;render()};
+$('#sbB').oninput=e=>{st.sbB=Math.min(100,Math.max(1,parseInt(e.target.value)||1));render()};
+document.addEventListener('fullscreenchange',syncSb);
+document.addEventListener('webkitfullscreenchange',syncSb);
+
+$('#capBtn').onclick=()=>{
+  selectMsg(null);$('#sheet').classList.remove('on');$('#phone').classList.add('cap');
+  const el=document.documentElement,req=el.requestFullscreen||el.webkitRequestFullscreen;
+  let p;try{p=req&&req.call(el,{navigationUI:'hide'})}catch(e){}
+  Promise.resolve(p).then(()=>{syncSb();toast('길게 누르면 전체 화면이 풀려요')}).catch(()=>toast('이 브라우저에서는 전체 화면이 막혔어요'));
+};
+let lp;
+const stopLp=()=>clearTimeout(lp);
+$('#phone').addEventListener('pointerdown',()=>{if(!$('#phone').classList.contains('cap'))return;lp=setTimeout(()=>{
+  $('#phone').classList.remove('cap');
+  if(fs()){try{const x=document.exitFullscreen||document.webkitExitFullscreen;const r=x&&x.call(document);if(r&&r.catch)r.catch(()=>{})}catch(e){}}
+},700)});
+['pointerup','pointercancel','pointermove'].forEach(t=>$('#phone').addEventListener(t,stopLp));
+$('#phone').addEventListener('contextmenu',e=>{if($('#phone').classList.contains('cap'))e.preventDefault()});
+
+setKind('msg');render();renderPeople();renderRoomEd();
+}
+</script>
+<script>if("serviceWorker" in navigator&&location.protocol==="https:"){navigator.serviceWorker.register("sw.js").catch(()=>{})}</script>
+</body>
+</html>
